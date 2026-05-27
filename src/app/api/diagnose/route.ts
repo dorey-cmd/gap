@@ -256,6 +256,8 @@ ${userGoalText}
         const protocol = request.headers.get('x-forwarded-proto') || 'https';
         const shareableUrl = `${protocol}://${host}/?session=${body.sessionId || ""}`;
 
+        const locationId = 'O8tlYEQIUn4z3qPCt1FX';
+
         // Create or update contact in GHL
         const ghlResponse = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
           method: "POST",
@@ -267,7 +269,8 @@ ${userGoalText}
             email: personalInfo?.email || "",
             phone: personalInfo?.phone || "",
             companyName: personalInfo?.businessName || "",
-            tags: ["אבחון עסקי - הפער", "AltruBiz Diagnostic"]
+            tags: ["GAP"],
+            locationId
           })
         });
 
@@ -277,6 +280,12 @@ ${userGoalText}
 
           // If successfully created/updated, add a detailed consultation note to GHL
           if (ghlContactId) {
+            const submissionTime = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+            const forwardedFor = request.headers.get('x-forwarded-for');
+            const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+            const refererUrl = request.headers.get('referer') || 'https://gap-nu-one.vercel.app';
+            const userAgent = request.headers.get('user-agent') || 'לא ידוע';
+
             const noteContent = `📋 אבחון עסקי - הפער שאף אחד לא מדבר עליו (AltruBiz)
 -------------------------------------------------
 פרטי הליד:
@@ -299,8 +308,11 @@ ${categoriesReport.map(cat => `- ${cat.name}: ${cat.percentage}% (רמת בגר�
 
 🔗 קישור קבוע לצפייה בדוח האינטראקטיבי המלא (Supabase):
 ${shareableUrl}
-`;
 
+-------------------------------------------------
+🛡️ תיעוד הסכמה ואישור דיוור (GDPR / חוק התקשורת):
+הפונה אישר באופן אקטיבי ויזום את קבלת התכנים במהלך מילוי הטופס. תיבת הסימון (הוי / V) של "אני מאשר לקבלת תכנים" הייתה כבויה (לא מסומנת) כברירת מחדל, והפונה בחר לסמן אותה בעצמו באופן ידני כדי להתקדם ולקבל את הדוח. האבחון הוגש ביום ${submissionTime} מכתובת ה-IP הבאה: ${clientIp}, דרך כתובת ה-URL שבה מולא הטופס: ${refererUrl}, באמצעות הדפדפן ומערכת ההפעלה הבאים: ${userAgent}. אישור זה מהווה הסכמה חוקית מפורשת לקבלת תכנים, עדכונים, ניתוחים מקצועיים והצעות מחברת AltruBiz.
+`;
 
             await fetch(`https://services.leadconnectorhq.com/contacts/${ghlContactId}/notes`, {
               method: "POST",
