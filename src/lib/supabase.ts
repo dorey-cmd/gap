@@ -59,3 +59,29 @@ export async function syncDraftToSupabase(state: {
     return null;
   }
 }
+
+/**
+ * Fetch a completed or active diagnostic session from Supabase by sessionId
+ */
+export async function fetchDraftFromSupabase(sessionId: string) {
+  if (!supabase) {
+    return null;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('diagnostics')
+      .select('*')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Supabase Fetch Warning:", error.message);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error("Supabase Fetch Exception:", err);
+    return null;
+  }
+}
+

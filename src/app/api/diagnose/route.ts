@@ -1,6 +1,8 @@
 // src/app/api/diagnose/route.ts
 import { NextResponse } from 'next/server';
 import { QUESTIONS, CATEGORIES, DIAGNOSTIC_LIBRARY } from '../../../data/diagnosticLibrary';
+import { supabase } from '../../../lib/supabase';
+
 
 const openAiKey = process.env.OPENAI_API_KEY || '';
 
@@ -213,7 +215,112 @@ ${userGoalText}
       finalOneThing: finalOneThing || ""
     };
 
+    // 1. Sync finished diagnostic + AI summary to Supabase
+    if (supabase && body.sessionId) {
+      try {
+        await supabase
+          .from('diagnostics')
+          .upsert({
+            session_id: body.sessionId,
+            full_name: personalInfo?.fullName || null,
+            phone: personalInfo?.phone || null,
+            email: personalInfo?.email || null,
+            business_name: personalInfo?.businessName || null,
+            answers: answers,
+            comments: comments || {},
+            final_one_thing: finalOneThing || null,
+            completed: true,
+            ai_summary: executiveSummary,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'session_id' });
+      } catch (dbErr) {
+        console.error("Database Update Error:", dbErr);
+      }
+    }
+
+    // 2. Integrate with GoHighLevel API using Private Integration Token (PIT)
+    const ghlToken = process.env.GHL_PIT_TOKEN || 'pit-b4a47851-a1cf-4593-8cfe-62f77ffb516c';
+    if (ghlToken && personalInfo?.email) {
+      try {
+        const nameParts = (personalInfo?.fullName || "").trim().split(/\s+/);
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        const ghlHeaders = {
+          'Authorization': `Bearer ${ghlToken}`,
+          'Version': '2021-07-28',
+          'Content-Type': 'application/json'
+        };
+
+        const host = request.headers.get('host') || 'gap-nu-one.vercel.app';
+        const protocol = request.headers.get('x-forwarded-proto') || 'https';
+        const shareableUrl = `${protocol}://${host}/?session=${body.sessionId || ""}`;
+
+        // Create or update contact in GHL
+        const ghlResponse = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+          method: "POST",
+          headers: ghlHeaders,
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            name: personalInfo?.fullName || "",
+            email: personalInfo?.email || "",
+            phone: personalInfo?.phone || "",
+            companyName: personalInfo?.businessName || "",
+            tags: ["אבחון עסקי - הפער", "AltruBiz Diagnostic"]
+          })
+        });
+
+        if (ghlResponse.ok) {
+          const ghlData = await ghlResponse.json();
+          const ghlContactId = ghlData.contact?.id;
+
+          // If successfully created/updated, add a detailed consultation note to GHL
+          if (ghlContactId) {
+            const noteContent = `📋 אבחון עסקי - הפער שאף אחד לא מדבר עליו (AltruBiz)
+-------------------------------------------------
+פרטי הליד:
+- שם: ${personalInfo?.fullName || ""}
+- טלפון: ${personalInfo?.phone || ""}
+- אימייל: ${personalInfo?.email || ""}
+- עסק: ${personalInfo?.businessName || ""}
+
+תוצאות האבחון לפי קטגוריות:
+${categoriesReport.map(cat => `- ${cat.name}: ${cat.percentage}% (רמת בגרות ${cat.level}/5)`).join('\n')}
+
+סיכום אסטרטגי:
+- נקודת חוזק (עוגן): ${strongestCategoryName}
+- נקודת חיכוך (צוואר בקבוק): ${weakestCategoryName}
+- הפער הנוצר: ${biggestFriction}
+- ההזדמנות החבויה: ${biggestOpportunity}
+
+האתגר המרכזי ל-90 הימים הקרובים:
+"${finalOneThing || "לא צוין"}"
+
+🔗 קישור קבוע לצפייה בדוח האינטראקטיבי המלא (Supabase):
+${shareableUrl}
+`;
+
+
+            await fetch(`https://services.leadconnectorhq.com/contacts/${ghlContactId}/notes`, {
+              method: "POST",
+              headers: ghlHeaders,
+              body: JSON.stringify({
+                body: noteContent
+              })
+            });
+          }
+        } else {
+          const errText = await ghlResponse.text();
+          console.error("GHL Contact Upsert Failed:", errText);
+        }
+      } catch (ghlErr) {
+        console.error("GHL Integration Exception:", ghlErr);
+      }
+    }
+
     return NextResponse.json({ report });
+
   } catch (error: any) {
     console.error("API Diagnostic Error:", error);
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });

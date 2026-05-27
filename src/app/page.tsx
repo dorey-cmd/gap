@@ -27,6 +27,8 @@ import {
 import { useAssessment } from "../hooks/useAssessment";
 import { QUESTIONS, CATEGORIES } from "../data/diagnosticLibrary";
 import { weaveReport, WeavedReport } from "../utils/reportWeaver";
+import { fetchDraftFromSupabase } from "../lib/supabase";
+
 
 const cleanSummaryText = (text: string) => {
   if (!text) return "";
@@ -43,7 +45,9 @@ export default function Home() {
     setFinalOneThing,
     setPersonalInfo,
     setIsCompleted,
+    setAiSummary,
     resetAssessment,
+    loadSessionData,
     getProgressMessage,
     calculateScores,
     totalQuestions,
@@ -52,6 +56,8 @@ export default function Home() {
     currentQuestionInCategoryIndex
   } = useAssessment();
 
+
+
   // Local state for UI flow
   const [commentOpen, setCommentOpen] = useState<{ [qId: number]: boolean }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +65,29 @@ export default function Home() {
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [activeReportTab, setActiveReportTab] = useState<number>(1);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Load remote session if "session" parameter is present in URL
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isHydrated) {
+      const params = new URLSearchParams(window.location.search);
+      const urlSessionId = params.get('session');
+      if (urlSessionId) {
+        setIsSubmitting(true);
+        fetchDraftFromSupabase(urlSessionId).then((data) => {
+          if (data) {
+            loadSessionData(data);
+          } else {
+            console.warn("No diagnostic session found for ID:", urlSessionId);
+          }
+          setIsSubmitting(false);
+        }).catch((err) => {
+          console.error("Error loading remote session:", err);
+          setIsSubmitting(false);
+        });
+      }
+    }
+  }, [isHydrated]);
+
 
   // Category Transition Screen State
   const [showTransition, setShowTransition] = useState(false);
@@ -116,7 +145,7 @@ export default function Home() {
   };
 
   // Handle Submit details
-  const handleSubmitContact = (e: React.FormEvent) => {
+  const handleSubmitContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAccepted) {
       alert("אנא אשר את תנאי השימוש וקבלת התכנים כדי להמשיך.");
@@ -128,13 +157,39 @@ export default function Home() {
     }
 
     setIsSubmitting(true);
-    
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("/api/diagnose", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          answers: state.answers,
+          comments: state.comments,
+          finalOneThing: state.finalOneThing,
+          personalInfo: state.personalInfo,
+          sessionId: state.sessionId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process business diagnostic.");
+      }
+
+      const data = await response.json();
+      if (data.report?.executiveSummary) {
+        setAiSummary(data.report.executiveSummary);
+      }
+    } catch (err) {
+      console.warn("Server-side diagnostic failed, falling back to client-side weaver:", err);
+    } finally {
       setIsCompleted(true);
       setIsSubmitting(false);
       setCurrentStep(45); // Reveal report
-    }, 4500);
+    }
   };
+
 
   const handlePrintPdf = () => {
     setIsPdfGenerating(true);
@@ -173,6 +228,10 @@ export default function Home() {
   }
 
   const report: WeavedReport | null = state.isCompleted ? weaveReport(state) : null;
+  if (report && state.aiSummary) {
+    report.executiveSummary = state.aiSummary;
+  }
+
 
   return (
     <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden bg-gradient-to-b from-[#f8fafc] to-[#ebf0f6] text-slate-800 font-sans selection:bg-brand-primary/10">

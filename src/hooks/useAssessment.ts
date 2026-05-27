@@ -20,7 +20,9 @@ export interface AssessmentState {
   personalInfo: PersonalInfo;
   isCompleted: boolean;
   sessionId: string;
+  aiSummary?: string;
 }
+
 
 const DEFAULT_STATE: AssessmentState = {
   answers: {},
@@ -35,7 +37,9 @@ const DEFAULT_STATE: AssessmentState = {
   },
   isCompleted: false,
   sessionId: "",
+  aiSummary: "",
 };
+
 
 const STORAGE_KEY = "altrubiz_diagnostic_state_v3"; // Bump storage version due to full 42 statement migration
 
@@ -133,6 +137,14 @@ export function useAssessment() {
     }));
   };
 
+  const setAiSummary = (summary: string) => {
+    updateState((prev) => ({
+      ...prev,
+      aiSummary: summary
+    }));
+  };
+
+
   const resetAssessment = () => {
     const newSessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
     const freshState = {
@@ -144,6 +156,30 @@ export function useAssessment() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(freshState));
     }
   };
+
+  const loadSessionData = (data: any) => {
+    const loadedState = {
+      answers: data.answers || {},
+      comments: data.comments || {},
+      currentStep: 45, // Skip to report
+      finalOneThing: data.final_one_thing || "",
+      personalInfo: {
+        fullName: data.full_name || "",
+        phone: data.phone || "",
+        email: data.email || "",
+        businessName: data.business_name || "",
+      },
+      isCompleted: true,
+      sessionId: data.session_id,
+      aiSummary: data.ai_summary || "",
+    };
+    setState(loadedState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(loadedState));
+    }
+  };
+
+
 
   // 3. Emotional progress phrase generator based on current question index (adapted for 42 questions)
   const getProgressMessage = (): string => {
@@ -216,7 +252,9 @@ export function useAssessment() {
     setFinalOneThing,
     setPersonalInfo,
     setIsCompleted,
+    setAiSummary,
     resetAssessment,
+    loadSessionData,
     getProgressMessage,
     calculateScores,
     totalQuestions: QUESTIONS.length,
