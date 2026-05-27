@@ -879,10 +879,11 @@ export default function Home() {
                             {/* Business Cost Block (Pain) */}
                             <div className="bg-red-50/50 border border-red-100 p-5 rounded-2xl text-right">
                               <span className="text-xs font-black text-brand-error tracking-wider block mb-1.5 uppercase">
-                                🛑 משמעות ועלויות תפעוליות (כאב)
+                                🛑 משמעות ועלויות תפעוליות
                               </span>
                               <p className="text-slate-700 font-light">{cat.businessCostText}</p>
                             </div>
+
                             
                             {/* Emotional Reflection Block (Mental Pain) */}
                             <div className="bg-amber-50/40 border border-amber-100 p-5 rounded-2xl text-right">
@@ -910,7 +911,7 @@ export default function Home() {
                             {/* Future Vision Block (Hope) */}
                             <div className="bg-emerald-50/40 border border-emerald-100 p-5 rounded-2xl text-right">
                               <span className="text-xs font-black text-emerald-700 tracking-wider block mb-1.5 uppercase">
-                                🌟 חזון ההצלחה העתידי (תקווה)
+                                🌟 חזון ההצלחה העתידי
                               </span>
                               <p className="text-slate-700 font-light">{cat.futureVisionText}</p>
                             </div>
@@ -918,7 +919,7 @@ export default function Home() {
                             {/* Improvement Opportunity Block (Solution) */}
                             <div className="bg-brand-primary/5 border border-brand-primary/10 p-5 rounded-2xl text-right">
                               <span className="text-xs font-black text-brand-primary tracking-wider block mb-1.5 uppercase">
-                                💡 ההזדמנות והדרך לפתרון (פתרון)
+                                💡 ההזדמנות והדרך לפתרון
                               </span>
                               <p className="text-slate-700 font-bold">{cat.improvementOpportunityText}</p>
                             </div>
