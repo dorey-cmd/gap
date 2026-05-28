@@ -204,7 +204,7 @@ ${userGoalText}
       const avg = total / count; // average out of 4
 
       // Find the lowest scored question in this category
-      let minQuestion = null;
+      let minQuestion: any = null;
       let minScore = Infinity;
 
       QUESTIONS.filter(q => q.category === catId).forEach(q => {
