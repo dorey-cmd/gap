@@ -286,7 +286,7 @@ ${userGoalText}
     }
 
     // 2. Integrate with N8N Webhook (Replaced GoHighLevel CRM Integration)
-    const n8nWebhookUrl = 'https://api8.altrubiz.com/webhook-test/3e0b2516-2524-4ee4-977b-98c264a2dbc3';
+    const n8nWebhookUrl = 'https://api8.altrubiz.com/webhook/3e0b2516-2524-4ee4-977b-98c264a2dbc3';
     if (personalInfo?.email) {
       try {
         const host = request.headers.get('host') || 'gap-nu-one.vercel.app';
