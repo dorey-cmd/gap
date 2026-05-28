@@ -297,11 +297,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="text-center flex flex-col items-center max-w-4xl mx-auto w-full px-2"
             >
-              <img 
-                src="https://storage.googleapis.com/msgsndr/O8tlYEQIUn4z3qPCt1FX/media/688019c09a4c2d4b4398bf3c.png" 
-                alt="AltruBiz Logo" 
-                className="h-20 md:h-28 w-auto object-contain mb-4 md:mb-6 hover:scale-105 transition-transform"
-              />
+
               <div className="mb-2.5 py-1.5 px-4 rounded-full bg-brand-primary/10 text-brand-primary text-[10px] md:text-xs font-black inline-flex items-center gap-2 uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-brand-accent animate-pulse" />
                 <span>מראה תפעולית עסקית אסטרטגית</span>
