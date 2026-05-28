@@ -196,6 +196,51 @@ ${userGoalText}
 אנו מזמינים אותך להתבונן בדוח זה לא כרשימת ציונים, אלא כנקודת תפנית אסטרטגית. הצעד הראשון לשחרור העומס המנטלי והפיכת העסק למכונה משומנת ויציבה מתחיל בהבנה ממוקדת של הפערים הללו ובבחירה לבנות סיסטם שיעבוד בשבילך.`;
     }
 
+    // Calculate the two most critical pain points dynamically
+    const categoryAverages = Object.keys(CATEGORIES).map((catStr) => {
+      const catId = parseInt(catStr);
+      const total = categoryTotals[catId];
+      const count = categoryCounts[catId];
+      const avg = total / count; // average out of 4
+
+      // Find the lowest scored question in this category
+      let minQuestion = null;
+      let minScore = Infinity;
+
+      QUESTIONS.filter(q => q.category === catId).forEach(q => {
+        const rawValue = answers[q.id] || 2;
+        const scoredValue = q.isReverse ? (5 - rawValue) : rawValue;
+        if (scoredValue < minScore) {
+          minScore = scoredValue;
+          minQuestion = q;
+        }
+      });
+
+      return {
+        catId,
+        name: CATEGORIES[catId],
+        average: avg,
+        minQuestionText: minQuestion ? minQuestion.text : "",
+        minQuestionScore: minScore
+      };
+    });
+
+    // Sort to find the two lowest scoring categories
+    const sortedCategories = [...categoryAverages].sort((a, b) => a.average - b.average);
+    const topTwoPains = sortedCategories.slice(0, 2);
+
+    const criticalPainPoints = topTwoPains.map((pain, index) => ({
+      rank: index + 1,
+      categoryName: pain.name,
+      categoryAverage: parseFloat(pain.average.toFixed(2)),
+      statement: pain.minQuestionText,
+      score: pain.minQuestionScore
+    }));
+
+    const criticalPainPointsSummary = `בהתבסס על ניתוח המבדק, שני הכאבים הקריטיים ביותר בעסק הם:
+1. בקטגוריה "${criticalPainPoints[0]?.categoryName || ''}" (ציון ממוצע של ${criticalPainPoints[0]?.categoryAverage || 0}/4), החיכוך הגדול ביותר עולה מההיגד: "${criticalPainPoints[0]?.statement || ''}" (ציון נמוך של ${criticalPainPoints[0]?.score || 0}/4).
+2. בקטגוריה "${criticalPainPoints[1]?.categoryName || ''}" (ציון ממוצע של ${criticalPainPoints[1]?.categoryAverage || 0}/4), החיכוך הגדול ביותר עולה מההיגד: "${criticalPainPoints[1]?.statement || ''}" (ציון נמוך של ${criticalPainPoints[1]?.score || 0}/4).`;
+
     const dateFormatted = new Date().toLocaleDateString('he-IL', {
       year: 'numeric',
       month: 'long',
@@ -212,7 +257,9 @@ ${userGoalText}
       weakestCategoryName,
       biggestFriction,
       biggestOpportunity,
-      finalOneThing: finalOneThing || ""
+      finalOneThing: finalOneThing || "",
+      criticalPainPoints,
+      criticalPainPointsSummary
     };
 
     // 1. Sync finished diagnostic + AI summary to Supabase
@@ -238,55 +285,24 @@ ${userGoalText}
       }
     }
 
-    // 2. Integrate with GoHighLevel API using Private Integration Token (PIT)
-    const ghlToken = process.env.GHL_PIT_TOKEN || 'pit-b4a47851-a1cf-4593-8cfe-62f77ffb516c';
-    if (ghlToken && personalInfo?.email) {
+    // 2. Integrate with N8N Webhook (Replaced GoHighLevel CRM Integration)
+    const n8nWebhookUrl = 'https://api8.altrubiz.com/webhook-test/3e0b2516-2524-4ee4-977b-98c264a2dbc3';
+    if (personalInfo?.email) {
       try {
-        const nameParts = (personalInfo?.fullName || "").trim().split(/\s+/);
-        const firstName = nameParts[0] || "";
-        const lastName = nameParts.slice(1).join(" ") || "";
-
-        const ghlHeaders = {
-          'Authorization': `Bearer ${ghlToken}`,
-          'Version': '2021-07-28',
-          'Content-Type': 'application/json'
-        };
-
         const host = request.headers.get('host') || 'gap-nu-one.vercel.app';
         const protocol = request.headers.get('x-forwarded-proto') || 'https';
         const shareableUrl = `${protocol}://${host}/?session=${body.sessionId || ""}`;
 
-        const locationId = 'O8tlYEQIUn4z3qPCt1FX';
+        const submissionDateStr = new Date().toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
+        const submissionTimeStr = new Date().toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const submissionTimeCombined = `${submissionDateStr}, ${submissionTimeStr}`;
 
-        // Create or update contact in GHL
-        const ghlResponse = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
-          method: "POST",
-          headers: ghlHeaders,
-          body: JSON.stringify({
-            firstName,
-            lastName,
-            name: personalInfo?.fullName || "",
-            email: personalInfo?.email || "",
-            phone: personalInfo?.phone || "",
-            companyName: personalInfo?.businessName || "",
-            tags: ["GAP"],
-            locationId
-          })
-        });
+        const forwardedFor = request.headers.get('x-forwarded-for');
+        const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+        const refererUrl = request.headers.get('referer') || 'https://gap-nu-one.vercel.app';
+        const userAgent = request.headers.get('user-agent') || 'לא ידוע';
 
-        if (ghlResponse.ok) {
-          const ghlData = await ghlResponse.json();
-          const ghlContactId = ghlData.contact?.id;
-
-          // If successfully created/updated, add a detailed consultation note to GHL
-          if (ghlContactId) {
-            const submissionTime = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
-            const forwardedFor = request.headers.get('x-forwarded-for');
-            const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
-            const refererUrl = request.headers.get('referer') || 'https://gap-nu-one.vercel.app';
-            const userAgent = request.headers.get('user-agent') || 'לא ידוע';
-
-            const noteContent = `📋 אבחון עסקי - הפער שאף אחד לא מדבר עליו (AltruBiz)
+        const formattedSummary = `📋 אבחון עסקי - הפער שאף אחד לא מדבר עליו (AltruBiz)
 -------------------------------------------------
 פרטי הליד:
 - שם: ${personalInfo?.fullName || ""}
@@ -311,23 +327,66 @@ ${shareableUrl}
 
 -------------------------------------------------
 🛡️ תיעוד הסכמה ואישור דיוור (GDPR / חוק התקשורת):
-הפונה אישר באופן אקטיבי ויזום את קבלת התכנים במהלך מילוי הטופס. תיבת הסימון (הוי / V) של "אני מאשר לקבלת תכנים" הייתה כבויה (לא מסומנת) כברירת מחדל, והפונה בחר לסמן אותה בעצמו באופן ידני כדי להתקדם ולקבל את הדוח. האבחון הוגש ביום ${submissionTime} מכתובת ה-IP הבאה: ${clientIp}, דרך כתובת ה-URL שבה מולא הטופס: ${refererUrl}, באמצעות הדפדפן ומערכת ההפעלה הבאים: ${userAgent}. אישור זה מהווה הסכמה חוקית מפורשת לקבלת תכנים, עדכונים, ניתוחים מקצועיים והצעות מחברת AltruBiz.
-`;
+הפונה אישר באופן אקטיבי ויזום את קבלת התכנים במהלך מילוי הטופס. תיבת הסימון (הוי / V) של "אני מאשר לקבלת תכנים" הייתה כבויה (לא מסומנת) כברירת מחדל, והפונה בחר לסמן אותה בעצמו באופן ידני כדי להתקדם ולקבל את הדוח. האבחון הוגש ביום ${submissionDateStr}, ${submissionTimeStr} מכתובת ה-IP הבאה: ${clientIp}, דרך כתובת ה-URL שבה מולא הטופס: ${refererUrl}, באמצעות הדפדפן ומערכת ההפעלה הבאים: ${userAgent}. אישור זה מהווה הסכמה חוקית מפורשת לקבלת תכנים, עדכונים, ניתוחים מקצועיים והצעות מחברת AltruBiz.`;
 
-            await fetch(`https://services.leadconnectorhq.com/contacts/${ghlContactId}/notes`, {
-              method: "POST",
-              headers: ghlHeaders,
-              body: JSON.stringify({
-                body: noteContent
-              })
-            });
+        const webhookPayload = {
+          sessionId: body.sessionId || "",
+          personalInfo: {
+            fullName: personalInfo.fullName || "",
+            phone: personalInfo.phone || "",
+            email: personalInfo.email || "",
+            businessName: personalInfo.businessName || ""
+          },
+          answers: answers,
+          comments: comments || {},
+          finalOneThing: finalOneThing || "",
+          formattedSummary: formattedSummary,
+          report: {
+            executiveSummary: executiveSummary,
+            categories: categoriesReport,
+            strongestCategoryName: strongestCategoryName,
+            weakestCategoryName: weakestCategoryName,
+            biggestFriction: biggestFriction,
+            biggestOpportunity: biggestOpportunity,
+            criticalPainPoints,
+            criticalPainPointsSummary,
+            formattedSummary: formattedSummary
+          },
+          shareableUrl: shareableUrl,
+          metadata: {
+            submissionTime: submissionTimeCombined,
+            clientIp,
+            refererUrl,
+            userAgent,
+            gdprConsent: {
+              hasAcceptedMarketing: true,
+              consentMethod: "Active Checkbox Check",
+              checkboxInitialState: "Unchecked (Required Opt-In)",
+              checkboxInteraction: "User manually clicked/checked the box to authorize",
+              termsVersion: "2026-05-GAP",
+              consentStatement: "אני מאשר קבלת תכנים אסטרטגיים ומקצועיים, ניתוחים, הצעות ועדכונים מ-AltruBiz ואישור תנאי השימוש ומדיניות הפרטיות.",
+              legalProof: `הפונה אישר באופן אקטיבי ויזום את קבלת התכנים במהלך מילוי הטופס. תיבת הסימון (הוי / V) של "אני מאשר לקבלת תכנים" הייתה כבויה (לא מסומנת) כברירת מחדל, והפונה בחר לסמן אותה בעצמו באופן ידני כדי להתקדם ולקבל את הדוח.`
+            }
           }
+        };
+
+        console.log("Sending diagnostic registration data to N8N webhook");
+        const webhookResponse = await fetch(n8nWebhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(webhookPayload)
+        });
+
+        if (webhookResponse.ok) {
+          console.log("Successfully sent data to N8N webhook!");
         } else {
-          const errText = await ghlResponse.text();
-          console.error("GHL Contact Upsert Failed:", errText);
+          const errText = await webhookResponse.text();
+          console.error("N8N Webhook Submission Failed:", webhookResponse.status, errText);
         }
-      } catch (ghlErr) {
-        console.error("GHL Integration Exception:", ghlErr);
+      } catch (webhookErr) {
+        console.error("N8N Webhook Integration Exception:", webhookErr);
       }
     }
 
