@@ -285,8 +285,11 @@ ${userGoalText}
       }
     }
 
-    // 2. Integrate with N8N Webhook (Replaced GoHighLevel CRM Integration)
-    const n8nWebhookUrl = 'https://api8.altrubiz.com/webhook/3e0b2516-2524-4ee4-977b-98c264a2dbc3';
+    // 2. Integrate with N8N Webhooks (Production & Test)
+    const webhookUrls = [
+      'https://api8.altrubiz.com/webhook/3e0b2516-2524-4ee4-977b-98c264a2dbc3',
+      'https://api8.altrubiz.com/webhook-test/3e0b2516-2524-4ee4-977b-98c264a2dbc3'
+    ];
     if (personalInfo?.email) {
       try {
         const host = request.headers.get('host') || 'gap-nu-one.vercel.app';
@@ -392,21 +395,27 @@ ${shareableUrl}
           }
         };
 
-        console.log("Sending diagnostic registration data to N8N webhook");
-        const webhookResponse = await fetch(n8nWebhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(webhookPayload)
-        });
+        console.log("Sending diagnostic registration data to N8N webhooks");
+        await Promise.all(webhookUrls.map(async (url) => {
+          try {
+            const webhookResponse = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(webhookPayload)
+            });
 
-        if (webhookResponse.ok) {
-          console.log("Successfully sent data to N8N webhook!");
-        } else {
-          const errText = await webhookResponse.text();
-          console.error("N8N Webhook Submission Failed:", webhookResponse.status, errText);
-        }
+            if (webhookResponse.ok) {
+              console.log(`Successfully sent data to webhook: ${url}`);
+            } else {
+              const errText = await webhookResponse.text();
+              console.error(`Webhook Submission Failed for ${url}:`, webhookResponse.status, errText);
+            }
+          } catch (fetchErr) {
+            console.error(`Error sending webhook to ${url}:`, fetchErr);
+          }
+        }));
       } catch (webhookErr) {
         console.error("N8N Webhook Integration Exception:", webhookErr);
       }
