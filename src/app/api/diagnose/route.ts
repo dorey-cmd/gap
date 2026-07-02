@@ -302,6 +302,13 @@ ${userGoalText}
         const refererUrl = request.headers.get('referer') || 'https://gap-nu-one.vercel.app';
         const userAgent = request.headers.get('user-agent') || 'לא ידוע';
 
+        const qaList = QUESTIONS.map((q) => {
+          const ansVal = answers[q.id];
+          const ansLabel = ansVal === 4 ? "כן" : ansVal === 1 ? "לא" : "לא נענה";
+          const commentText = comments?.[q.id] ? ` (הערה: ${comments[q.id]})` : "";
+          return `- ${q.text}: ${ansLabel}${commentText}`;
+        }).join('\n');
+
         const formattedSummary = `📋 אבחון עסקי - הפער שאף אחד לא מדבר עליו (AltruBiz)
 -------------------------------------------------
 פרטי הליד:
@@ -322,6 +329,14 @@ ${categoriesReport.map(cat => `- ${cat.name}: ${cat.percentage}% (רמת בגר�
 האתגר המרכזי ל-90 הימים הקרובים:
 "${finalOneThing || "לא צוין"}"
 
+-------------------------------------------------
+📝 שאלות ותשובות מהאבחון:
+${qaList}
+
+-------------------------------------------------
+📖 סיכום מנהלים אסטרטגי שניתן ללקוח:
+${executiveSummary || "לא הופק סיכום"}
+
 🔗 קישור קבוע לצפייה בדוח האינטראקטיבי המלא (Supabase):
 ${shareableUrl}
 
@@ -340,6 +355,13 @@ ${shareableUrl}
           answers: answers,
           comments: comments || {},
           finalOneThing: finalOneThing || "",
+          qaList: QUESTIONS.map((q) => ({
+            id: q.id,
+            category: q.category,
+            questionText: q.text,
+            answer: answers[q.id] === 4 ? "כן" : answers[q.id] === 1 ? "לא" : "לא נענה",
+            comment: comments?.[q.id] || ""
+          })),
           formattedSummary: formattedSummary,
           report: {
             executiveSummary: executiveSummary,
