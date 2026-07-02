@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     Object.keys(CATEGORIES).forEach((catStr) => {
       const catId = parseInt(catStr);
       const total = categoryTotals[catId];
-      const maxPossible = categoryCounts[catId] * 4; // 16 points (4 questions * 4 points)
-      const minPossible = categoryCounts[catId] * 1; // 4 points (4 questions * 1 point)
+      const maxPossible = categoryCounts[catId] * 4; // Max possible points (Q_PER_CATEGORY * 4)
+      const minPossible = categoryCounts[catId] * 1; // Min possible points (Q_PER_CATEGORY * 1)
       const percentage = Math.round(((total - minPossible) / (maxPossible - minPossible)) * 100);
 
       let level = 3;

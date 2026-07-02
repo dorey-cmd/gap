@@ -23,60 +23,38 @@ export interface Category {
   states: { [level: number]: DiagnosticState };
 }
 
+export const Q_PER_CATEGORY = 3;
+
 export const QUESTIONS: Question[] = [
   // CATEGORY 1 - ניהול לידים ולקוחות
   { id: 1, category: 1, text: "אני יודע בכל רגע נתון מה מצב הטיפול בכל ליד בעסק", isReverse: false },
   { id: 2, category: 1, text: "לעיתים לקוחות פוטנציאליים נעלמים לי בלי שאני יודע בדיוק איפה בתהליך איבדתי אותם", isReverse: true },
   { id: 3, category: 1, text: "כל המידע על לקוח מרוכז במקום אחד ונגיש בקלות", isReverse: false },
-  { id: 4, category: 1, text: "מידע חשוב על לקוחות עדיין מפוזר בין וואטסאפ, מיילים ואנשי צוות", isReverse: true },
-  { id: 5, category: 1, text: "אני יכול לראות בקלות את כל ההיסטוריה של כל לקוח", isReverse: false },
-  { id: 6, category: 1, text: "קורה שלקוחות צריכים להזכיר לי או לצוות דברים שכבר סוכמו בעבר", isReverse: true },
-  { id: 7, category: 1, text: "תהליך הטיפול בליד החדש ברור ואחיד לכל אנשי הצוות", isReverse: false },
 
   // CATEGORY 2 - מעקב אחרי מכירות
-  { id: 8, category: 2, text: "אני יודע בדיוק כמה לידים נכנסו השבוע לעסק", isReverse: false },
-  { id: 9, category: 2, text: "אני לא באמת יודע כמה עסקאות איבדתי החודש", isReverse: true },
-  { id: 10, category: 2, text: "קיימת לי תמונת מצב ברורה של משפך המכירות", isReverse: false },
-  { id: 11, category: 2, text: "חלק מההחלטות המכירה מתקבלות בעיקר על סמך תחושת בטן", isReverse: true },
-  { id: 12, category: 2, text: "אני יודע לזהות בקלות את צוואר הבקבוק המרכזי בתהליך המכירה", isReverse: false },
-  { id: 13, category: 2, text: "לעיתים קרובות אני מגלה בעיות רק אחרי שהן כבר פוגעות בתוצאות", isReverse: true },
-  { id: 14, category: 2, text: "הנתונים החשובים בעסק זמינים לי בלחיצת כפתור", isReverse: false },
+  { id: 4, category: 2, text: "אני יודע בדיוק כמה לידים נכנסו השבוע לעסק", isReverse: false },
+  { id: 5, category: 2, text: "אני לא באמת יודע כמה עסקאות איבדתי החודש", isReverse: true },
+  { id: 6, category: 2, text: "קיימת לי תמונת מצב ברורה של משפך המכירות", isReverse: false },
 
   // CATEGORY 3 - אוטומציה של תהליכים
-  { id: 15, category: 3, text: "קיימות פעולות רבות בעסק שמתבצעות באופן אוטומטי", isReverse: false },
-  { id: 16, category: 3, text: "אנשי הצוות מבצעים שוב ושוב פעולות שהיה ניתן לבצע באופן אוטומטי", isReverse: true },
-  { id: 17, category: 3, text: "תהליכי תזכורות ומעקבים פועלים ללא תלות בזיכרון האנושי", isReverse: false },
-  { id: 18, category: 3, text: "העסק שלי תלוי מאוד בכך שאנשים יזכרו לבצע משימות בזמן", isReverse: true },
-  { id: 19, category: 3, text: "לקוחות מקבלים מידע ועדכונים באופן עקבי", isReverse: false },
-  { id: 20, category: 3, text: "קורה שתהליכים נתקעים רק כי אף אחד לא לחץ על הכפתור הבא", isReverse: true },
-  { id: 21, category: 3, text: "רמת האוטומציה בעסק חוסכת לי זמן משמעותי בכל שבוע", isReverse: false },
+  { id: 7, category: 3, text: "קיימות פעולות רבות בעסק שמתבצעות באופן אוטומטי", isReverse: false },
+  { id: 8, category: 3, text: "אנשי הצוות מבצעים שוב ושוב פעולות שהיה ניתן לבצע באופן אוטומטי", isReverse: true },
+  { id: 9, category: 3, text: "תהליכי תזכורות ומעקבים פועלים ללא תלות בזיכרון האנושי", isReverse: false },
 
   // CATEGORY 4 - שימוש ב-AI
-  { id: 22, category: 4, text: "אני משתמש בבינה מלאכותית באופן קבוע כחלק מהפעילות העסקית", isReverse: false },
-  { id: 23, category: 4, text: "רוב השימוש שלי ב-AI מסתכם בניסויים אקראיים ולא בתהליך עבודה אמיתי", isReverse: true },
-  { id: 24, category: 4, text: "קיימים תהליכים בעסק שבהם AI מחליף עבודה ידנית", isReverse: false },
-  { id: 25, category: 4, text: "אני מרגיש שאני מפספס חלק גדול מהפוטנציאל של AI", isReverse: true },
-  { id: 26, category: 4, text: "אני יודע לזהות אילו משימות נכון להעביר ל-AI", isReverse: false },
-  { id: 27, category: 4, text: "השימוש שלי ב-AI עדיין לא יצר שינוי מדיד בעסק", isReverse: true },
-  { id: 28, category: 4, text: "קיימת חשיבה מסודרת על שילוב AI בתהליכים עסקיים", isReverse: false },
+  { id: 10, category: 4, text: "אני משתמש בבינה מלאכותית באופן קבוע כחלק מהפעילות העסקית", isReverse: false },
+  { id: 11, category: 4, text: "רוב השימוש שלי ב-AI מסתכם בניסויים אקראיים ולא בתהליך עבודה אמיתי", isReverse: true },
+  { id: 12, category: 4, text: "קיימים תהליכים בעסק שבהם AI מחליף עבודה ידנית", isReverse: false },
 
   // CATEGORY 5 - תלות בבעל העסק
-  { id: 29, category: 5, text: "העסק מסוגל להמשיך לתפקד גם כשאני לא זמין", isReverse: false },
-  { id: 30, category: 5, text: "רוב ההחלטות החשובות חייבות לעבור דרכי", isReverse: true },
-  { id: 31, category: 5, text: "קיימים נהלים ותהליכים ברורים שמאפשרים לאחרים לפעול עצמאית", isReverse: false },
-  { id: 32, category: 5, text: "לקוחות ועובדים תלויים בי גם עבור נושאים שגרתיים", isReverse: true },
-  { id: 33, category: 5, text: "הידע הקריטי בעסק מתועד ונגיש", isReverse: false },
-  { id: 34, category: 5, text: "יש ידע חשוב שנמצא רק אצלי בראש", isReverse: true },
-  { id: 35, category: 5, text: "אני מרגיש שהעסק בנוי כך שיוכל לצמוח גם בלעדיי", isReverse: false },
+  { id: 13, category: 5, text: "העסק מסוגל להמשיך לתפקד גם כשאני לא זמין", isReverse: false },
+  { id: 14, category: 5, text: "רוב ההחלטות החשובות חייבות לעבור דרכי", isReverse: true },
+  { id: 15, category: 5, text: "קיימים נהלים ותהליכים ברורים שמאפשרים לאחרים לפעול עצמאית", isReverse: false },
 
   // CATEGORY 6 - מוכנות לצמיחה
-  { id: 36, category: 6, text: "התשתית התפעולית שלי מסוגלת להתמודד עם כמות כפולה של לקוחות", isReverse: false },
-  { id: 37, category: 6, text: "גידול חד בכמות הלידים עלול ליצור כאוס בעסק", isReverse: true },
-  { id: 38, category: 6, text: "קל לי לקלוט עובד חדש ולהכניס אותו לעבודה", isReverse: false },
-  { id: 39, category: 6, text: "הרבה מהתהליכים בעסק אינם מתועדים בצורה מסודרת", isReverse: true },
-  { id: 40, category: 6, text: "המערכות בעסק מתקשרות זו עם זו בצורה יעילה", isReverse: false },
-  { id: 41, category: 6, text: "קיימת כפילות עבודה בגלל מערכות שאינן מחוברות", isReverse: true },
-  { id: 42, category: 6, text: "אני מאמין שהעסק שלי מוכן לשלב הצמיחה הבא", isReverse: false }
+  { id: 16, category: 6, text: "התשתית התפעולית שלי מסוגלת להתמודד עם כמות כפולה של לקוחות", isReverse: false },
+  { id: 17, category: 6, text: "גידול חד בכמות הלידים עלול ליצור כאוס בעסק", isReverse: true },
+  { id: 18, category: 6, text: "קל לי לקלוט עובד חדש ולהכניס אותו לעבודה", isReverse: false }
 ];
 
 export const CATEGORIES: { [key: number]: string } = {

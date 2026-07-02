@@ -25,7 +25,7 @@ import {
   ArrowUpRight
 } from "lucide-react";
 import { useAssessment } from "../hooks/useAssessment";
-import { QUESTIONS, CATEGORIES } from "../data/diagnosticLibrary";
+import { QUESTIONS, CATEGORIES, Q_PER_CATEGORY } from "../data/diagnosticLibrary";
 import { weaveReport, WeavedReport } from "../utils/reportWeaver";
 import { fetchDraftFromSupabase } from "../lib/supabase";
 
@@ -122,18 +122,12 @@ export default function Home() {
     setAnswer(questionId, rating);
   };
 
-  // Safe wrapper to handle Next step with category transitions
+  // Safe wrapper to handle Next step
   const handleNextStep = () => {
     if (state.currentStep < totalQuestions) {
-      // Check if we are at the end of a category (questions 7, 14, 21, 28, 35)
-      if (state.currentStep % 7 === 0) {
-        setPendingNextStep(state.currentStep + 1);
-        setShowTransition(true);
-      } else {
-        setCurrentStep(state.currentStep + 1);
-      }
+      setCurrentStep(state.currentStep + 1);
     } else {
-      setCurrentStep(43); // Go to final challenge question
+      setCurrentStep(totalQuestions + 1); // Go to final challenge question
     }
   };
 
@@ -188,7 +182,7 @@ export default function Home() {
     } finally {
       setIsCompleted(true);
       setIsSubmitting(false);
-      setCurrentStep(45); // Reveal report
+      setCurrentStep(totalQuestions + 3); // Reveal report
     }
   };
 
@@ -246,7 +240,7 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col justify-center max-w-5xl w-full mx-auto px-4 py-8 md:py-16 z-10">
-        {state.currentStep >= 1 && state.currentStep <= 44 && (
+        {state.currentStep >= 1 && state.currentStep <= totalQuestions + 2 && (
           <div className="flex justify-between items-center w-full mb-6 px-2 print:hidden shrink-0">
             <span className="text-xs text-slate-400 font-light">אבחון חסמי צמיחה עסקיים</span>
             <img 
@@ -360,13 +354,13 @@ export default function Home() {
               </motion.button>
               
               <span className="text-xs md:text-sm text-slate-400 mt-5 font-light">
-                מבנה שאלון מנותק ממתח: 42 שאלות המחולקות לפרקים • שמירה אוטומטית מלאה בכל רגע
+                מבנה שאלון מנותק ממתח: {totalQuestions} שאלות המחולקות לפרקים • שמירה אוטומטית מלאה בכל רגע
               </span>
             </motion.div>
           )}
 
-          {/* STEP 1-42: Questionnaire Screen with Segmented Progress */}
-          {!showTransition && state.currentStep >= 1 && state.currentStep <= 42 && (
+          {/* STEP 1-totalQuestions: Questionnaire Screen with Segmented Progress */}
+          {!showTransition && state.currentStep >= 1 && state.currentStep <= totalQuestions && (
             <motion.div
               key={`question-${state.currentStep}`}
               initial={{ opacity: 0, x: 30 }}
@@ -392,13 +386,14 @@ export default function Home() {
                     </div>
                   </div>
                   <span className="text-[10px] md:text-xs text-slate-500 font-bold">
-                    שאלה {currentQuestionInCategoryIndex} מתוך 7
+                    שאלה {currentQuestionInCategoryIndex} מתוך {Q_PER_CATEGORY}
                   </span>
                 </div>
                 
-                {/* Discrete Category Progress Segments (7 questions) */}
-                <div className="grid grid-cols-7 gap-2.5 mb-3">
-                  {[1, 2, 3, 4, 5, 6, 7].map((stepIdx) => {
+                {/* Discrete Category Progress Segments */}
+                <div className={`grid grid-cols-${Q_PER_CATEGORY} gap-2.5 mb-3`}>
+                  {Array.from({ length: Q_PER_CATEGORY }).map((_, idx) => {
+                    const stepIdx = idx + 1;
                     const isCompleted = stepIdx < currentQuestionInCategoryIndex;
                     const isActive = stepIdx === currentQuestionInCategoryIndex;
                     return (
@@ -430,14 +425,12 @@ export default function Home() {
                   {QUESTIONS[state.currentStep - 1].text}
                 </h3>
 
-                {/* Rating 1-4 Agreeability Grid (Capsule styling) - 2x2 grid on mobile for perfect fit */}
+                {/* Rating Yes/No Agreeability Grid (Capsule styling) */}
                 <div className="mb-6 md:mb-8">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-4 mb-3">
+                  <div className="grid grid-cols-2 gap-4 md:gap-6 mb-3">
                     {[
-                      { val: 1, label: "כלל לא נכון" },
-                      { val: 2, label: "לא כל כך נכון" },
-                      { val: 3, label: "די נכון" },
-                      { val: 4, label: "נכון מאוד" }
+                      { val: 4, label: "כן" },
+                      { val: 1, label: "לא" }
                     ].map((pill) => {
                       const isSelected = state.answers[state.currentStep] === pill.val;
                       return (
@@ -445,14 +438,13 @@ export default function Home() {
                           key={pill.val}
                           type="button"
                           onClick={() => handleRate(state.currentStep, pill.val)}
-                          className={`py-3 md:py-4.5 px-2 md:px-4 rounded-xl md:rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-bezier border font-bold ${
+                          className={`py-4 md:py-6 px-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-bezier border font-bold ${
                             isSelected 
                               ? "bg-brand-navy border-brand-navy text-white shadow-lg shadow-brand-navy/15 scale-102" 
                               : "bg-slate-50 border-slate-200 text-slate-700 hover:border-brand-primary/30 hover:bg-brand-primary/5 hover:scale-[1.01]"
                           }`}
                         >
-                          <span className="text-base md:text-xl font-black mb-0.5">{pill.val}</span>
-                          <span className="text-[10px] md:text-xs font-semibold">{pill.label}</span>
+                          <span className="text-lg md:text-xl font-black">{pill.label}</span>
                         </button>
                       );
                     })}
@@ -548,7 +540,7 @@ export default function Home() {
               <div className="flex justify-between items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(42)}
+                  onClick={() => setCurrentStep(totalQuestions)}
                   className="py-3.5 px-8 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -557,7 +549,7 @@ export default function Home() {
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(44)}
+                  onClick={() => setCurrentStep(totalQuestions + 2)}
                   className="py-3.5 px-8 rounded-2xl bg-brand-primary hover:bg-[#0052a3] text-white font-bold text-sm inline-flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-brand-primary/10"
                 >
                   <span>המשך ליצירת הדוח</span>
@@ -567,8 +559,8 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* STEP 44: Contact Capture with checkbox and processing screen */}
-          {!showTransition && state.currentStep === 44 && (
+          {/* STEP totalQuestions + 2: Contact Capture with checkbox and processing screen */}
+          {!showTransition && state.currentStep === totalQuestions + 2 && (
             <motion.div
               key="contact-capture"
               initial={{ opacity: 0, y: 20 }}
@@ -644,7 +636,7 @@ export default function Home() {
                     <div className="pt-3">
                       <label className="flex items-start gap-3 cursor-pointer text-xs md:text-sm text-slate-600 select-none">
                         <input
-                          type="checkbox"
+                           type="checkbox"
                           required
                           checked={termsAccepted}
                           onChange={(e) => setTermsAccepted(e.target.checked)}
@@ -698,15 +690,15 @@ export default function Home() {
                   </div>
 
                   <p className="text-xs md:text-sm text-brand-soft/60 max-w-xs font-light leading-relaxed">
-                    סורק דפוסי תלות במייסד ורמת בשלות לצמיחה על פי 42 מדדים...
+                    סורק דפוסי תלות במייסד ורמת בשלות לצמיחה על פי {totalQuestions} מדדים...
                   </p>
                 </div>
               )}
             </motion.div>
           )}
 
-          {/* STEP 45: Full Premium Report (The Digital Mirror) */}
-          {!showTransition && state.currentStep === 45 && report && (
+          {/* STEP totalQuestions + 3: Full Premium Report (The Digital Mirror) */}
+          {!showTransition && state.currentStep === totalQuestions + 3 && report && (
             <motion.div
               key="report-dashboard"
               initial={{ opacity: 0 }}

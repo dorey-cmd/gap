@@ -52,8 +52,8 @@ export function weaveReport(state: AssessmentState): WeavedReport {
   Object.keys(CATEGORIES).forEach((catStr) => {
     const catId = parseInt(catStr);
     const total = categoryTotals[catId];
-    const maxPossible = categoryCounts[catId] * 4; // 28 points (7 questions * 4 points)
-    const minPossible = categoryCounts[catId] * 1; // 7 points (7 questions * 1 point)
+    const maxPossible = categoryCounts[catId] * 4; // Max possible points (Q_PER_CATEGORY * 4)
+    const minPossible = categoryCounts[catId] * 1; // Min possible points (Q_PER_CATEGORY * 1)
     
     // Normalize percentage
     const percentage = Math.round(((total - minPossible) / (maxPossible - minPossible)) * 100);

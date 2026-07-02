@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { QUESTIONS, CATEGORIES } from '../data/diagnosticLibrary';
+import { QUESTIONS, CATEGORIES, Q_PER_CATEGORY } from '../data/diagnosticLibrary';
 import { syncDraftToSupabase } from '../lib/supabase';
 
 export interface PersonalInfo {
@@ -15,7 +15,7 @@ export interface PersonalInfo {
 export interface AssessmentState {
   answers: { [questionId: number]: number };
   comments: { [questionId: number]: string };
-  currentStep: number; // 0 = welcome, 1-42 = questions, 43 = final question, 44 = contact, 45 = report
+  currentStep: number; // 0 = welcome, 1-18 = questions, 19 = final question, 20 = contact, 21 = report
   finalOneThing: string;
   personalInfo: PersonalInfo;
   isCompleted: boolean;
@@ -181,18 +181,19 @@ export function useAssessment() {
 
 
 
-  // 3. Emotional progress phrase generator based on current question index (adapted for 42 questions)
+  // 3. Emotional progress phrase generator based on current question index (adapted for dynamic questions)
   const getProgressMessage = (): string => {
     const answeredCount = Object.keys(state.answers).length;
+    const total = QUESTIONS.length;
     if (answeredCount === 0) return "יוצאים לדרך להבנת התמונה הרחבה...";
-    if (answeredCount <= 10) return "אנחנו מתחילים להבין את התמונה הרחבה...";
-    if (answeredCount <= 20) return "התמונה התפעולית של העסק שלך הולכת ומתבהרת...";
-    if (answeredCount <= 30) return "הדפוסים התפעוליים והניהוליים מתחילים להתחבר...";
-    if (answeredCount < 42) return "כמעט אספנו מספיק מידע כדי לחשוף את צווארי הבקבוק הסמויים...";
+    if (answeredCount <= 5) return "אנחנו מתחילים להבין את התמונה הרחבה...";
+    if (answeredCount <= 10) return "התמונה התפעולית של העסק שלך הולכת ומתבהרת...";
+    if (answeredCount <= 15) return "הדפוסים התפעוליים והניהוליים מתחילים להתחבר...";
+    if (answeredCount < total) return "כמעט אספנו מספיק מידע כדי לחשוף את צווארי הבקבוק הסמויים...";
     return "כל פיסות המידע התחברו. הניתוח מוכן לגילוי.";
   };
 
-  // 4. Score engine for 7 questions per category and 1-4 scale
+  // 4. Score engine for Q_PER_CATEGORY questions per category and 1-4 scale
   const calculateScores = () => {
     const categoryTotals: { [catId: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     const categoryCounts: { [catId: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -210,10 +211,10 @@ export function useAssessment() {
     Object.keys(CATEGORIES).forEach((catStr) => {
       const catId = parseInt(catStr);
       const total = categoryTotals[catId];
-      const maxPossible = categoryCounts[catId] * 4; // 28 points (7 questions * 4 points)
-      const minPossible = categoryCounts[catId] * 1; // 7 points (7 questions * 1 point)
+      const maxPossible = categoryCounts[catId] * 4; // Max possible points (Q_PER_CATEGORY * 4)
+      const minPossible = categoryCounts[catId] * 1; // Min possible points (Q_PER_CATEGORY * 1)
       
-      // Calculate 0-100 percentage based on scale limits (7 to 28)
+      // Calculate 0-100 percentage based on scale limits
       const percentage = Math.round(((total - minPossible) / (maxPossible - minPossible)) * 100);
       
       // Map percentage to maturity levels 1 to 5
@@ -234,13 +235,13 @@ export function useAssessment() {
     return categoryMaturity;
   };
 
-  // Helper values for category-segmented progress tracking (7 questions per category)
-  const currentCategoryIndex = state.currentStep >= 1 && state.currentStep <= 42 
-    ? Math.ceil(state.currentStep / 7) 
+  // Helper values for category-segmented progress tracking
+  const currentCategoryIndex = state.currentStep >= 1 && state.currentStep <= QUESTIONS.length 
+    ? Math.ceil(state.currentStep / Q_PER_CATEGORY) 
     : 1;
 
-  const currentQuestionInCategoryIndex = state.currentStep >= 1 && state.currentStep <= 42 
-    ? ((state.currentStep - 1) % 7) + 1 
+  const currentQuestionInCategoryIndex = state.currentStep >= 1 && state.currentStep <= QUESTIONS.length 
+    ? ((state.currentStep - 1) % Q_PER_CATEGORY) + 1 
     : 1;
 
   return {
