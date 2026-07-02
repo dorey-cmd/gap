@@ -161,7 +161,7 @@ export function useAssessment() {
     const loadedState = {
       answers: data.answers || {},
       comments: data.comments || {},
-      currentStep: 45, // Skip to report
+      currentStep: QUESTIONS.length + 3, // Skip to report
       finalOneThing: data.final_one_thing || "",
       personalInfo: {
         fullName: data.full_name || "",

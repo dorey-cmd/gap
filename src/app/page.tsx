@@ -505,8 +505,8 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* STEP 43: Final open-ended challenge question */}
-          {!showTransition && state.currentStep === 43 && (
+          {/* STEP totalQuestions + 1: Final open-ended challenge question */}
+          {!showTransition && state.currentStep === totalQuestions + 1 && (
             <motion.div
               key="final-question"
               initial={{ opacity: 0, scale: 0.95 }}
